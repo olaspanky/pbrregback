@@ -1,20 +1,18 @@
-import mongoose from 'mongoose';
+const mongoose = require("mongoose");
 
 const registrationSchema = new mongoose.Schema({
-  title: { type: String, required: true },
-  firstName: { type: String, required: true },
-  surname: { type: String, required: true },
-  organization: { type: String, required: true },
-  jobDesignation: { type: String, required: true },
-  headquarters: { type: String, required: true },
-  category: { type: String, required: true },
-  mode: { type: String, required: true },
-  networking: { type: [String], required: true },
-  email: { type: String, required: true },
-  status: { type: String, default: 'PENDING' },
-  createdAt: { type: Date, default: Date.now }
+  title: String,
+  firstName: String,
+  surname: String,
+  organization: String,
+  jobDesignation: String,
+  headquarters: String,
+  category: String,
+  mode: String,
+  networking: [String],
+  email: String,
+  status: { type: String, default: "PENDING" },
+  createdAt: { type: Date, default: Date.now },
 });
 
-const Registration = mongoose.model('Registration', registrationSchema);
-
-export default Registration;
+module.exports = mongoose.model("Registration", registrationSchema);

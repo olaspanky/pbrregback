@@ -1,9 +1,10 @@
-import express from 'express';
-import cors from 'cors';
-import connectDB from './db/connect.js';
-import Registration from './models/Registeration.js';
-import nodemailer from 'nodemailer';
-import 'dotenv/config';
+// server.js
+const express = require("express");
+const cors = require("cors");
+const connectDB = require("./db/connect");
+const Registration = require("./models/Registeration");
+const nodemailer = require("nodemailer");
+require("dotenv/config");
 
 const app = express();
 
@@ -12,7 +13,9 @@ app.use(cors());
 app.use(express.json());
 
 // Connect to MongoDB
-connectDB();
+connectDB().catch((error) => {
+  console.error("Failed to start server due to MongoDB connection error:", error);
+});
 
 // Email transporter
 const transporter = nodemailer.createTransport({
@@ -21,35 +24,35 @@ const transporter = nodemailer.createTransport({
   secure: false,
   auth: {
     user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
+    pass: process.env.EMAIL_PASS,
+  },
 });
 
 // Registration endpoint
-app.post('/api/register', async (req, res) => {
+app.post("/api/register", async (req, res) => {
   try {
     const newRegistration = new Registration(req.body);
     const savedRegistration = await newRegistration.save();
     res.status(201).json(savedRegistration);
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(400).json({ error: 'Registration failed' });
+    console.error("Registration error:", error);
+    res.status(400).json({ error: "Registration failed" });
   }
 });
 
 // Get all applications
-app.get('/api/applications', async (req, res) => {
+app.get("/api/applications", async (req, res) => {
   try {
     const applications = await Registration.find();
     res.json(applications);
   } catch (error) {
-    console.error('Fetch applications error:', error);
-    res.status(500).json({ error: 'Failed to fetch applications' });
+    console.error("Fetch applications error:", error);
+    res.status(500).json({ error: "Failed to fetch applications" });
   }
 });
 
 // Update application status
-app.put('/api/applications/:id/status', async (req, res) => {
+app.put("/api/applications/:id/status", async (req, res) => {
   try {
     const updatedApp = await Registration.findByIdAndUpdate(
       req.params.id,
@@ -57,21 +60,31 @@ app.put('/api/applications/:id/status', async (req, res) => {
       { new: true }
     );
 
+    if (!updatedApp) {
+      return res.status(404).json({ error: "Application not found" });
+    }
+
     // Send email
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: updatedApp.email,
-      subject: 'Registration Status Update',
-      text: `Your registration has been ${req.body.status.toLowerCase()}.`
+      subject: "Registration Status Update",
+      text: `Your registration has been ${req.body.status.toLowerCase()}.`,
     };
 
     await transporter.sendMail(mailOptions);
     res.json(updatedApp);
   } catch (error) {
-    console.error('Status update error:', error);
-    res.status(400).json({ error: 'Status update failed' });
+    console.error("Status update error:", error);
+    res.status(400).json({ error: "Status update failed" });
   }
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: "Internal server error" });
+});
+
+// Export the app for Vercel
+module.exports = app;
