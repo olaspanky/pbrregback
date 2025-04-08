@@ -9,13 +9,23 @@ require("dotenv/config");
 const app = express();
 
 // Middleware
-app.use(
-  cors({
-    origin: "*", // Allow all origins
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allow these HTTP methods
-    allowedHeaders: ["Content-Type", "Authorization"], // Allow these headers
-  })
-);app.use(express.json());
+const allowedOrigins = [
+ 
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'pbrsummit.vercel.app'
+];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
 
 // Connect to MongoDB
 connectDB().catch((error) => {
