@@ -45,6 +45,7 @@ class EmailService {
         name: MAIL_FROM_NAME,
         subject,
         body: html,
+        isHtml: true // Add this flag to indicate HTML content
       };
 
       const response = await axios.post(MAIL_SERVICE_URL, payload, {
