@@ -44,11 +44,15 @@ class EmailService {
         fromEmail: MAIL_FROM_EMAIL,
         name: MAIL_FROM_NAME,
         subject,
+        body: html,
         isHtml: true // Add this flag to indicate HTML content
       };
 
       const response = await axios.post(MAIL_SERVICE_URL, payload, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         timeout: 10000,
       });
 
