@@ -8,7 +8,7 @@ const Registration = require('./models/Registeration');
 // Constants
 const MAIL_SERVICE_URL = 'https://mail.pbr.com.ng/send';
 const MAIL_FROM_EMAIL = process.env.MAIL_FROM_EMAIL || 'adeoye.sobande@pbrinsight.com';
-const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || 'Kareem';
+const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || 'Adeoye Sobande';
 const INVESTOR_CATEGORIES = [
   'Development Finance Institution',
   'Private Equity',
@@ -44,7 +44,6 @@ class EmailService {
         fromEmail: MAIL_FROM_EMAIL,
         name: MAIL_FROM_NAME,
         subject,
-        body: html,
         isHtml: true // Add this flag to indicate HTML content
       };
 
