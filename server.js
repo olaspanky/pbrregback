@@ -257,7 +257,7 @@ app.put("/api/applications/:id/status", async (req, res) => {
 
     // Send email
     try {
-      const response = await axios.post("https://api.pbr.com.ng/mail/send", mailPayload, {
+      const response = await axios.post("https://mail.pbr.com.ng/send", mailPayload, {
         headers: { "Content-Type": "application/json" },
         timeout: 10000, // 10s timeout
       });
