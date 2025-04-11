@@ -180,20 +180,41 @@ app.get("/api/applications", async (req, res) => {
 // Update application status
 app.put("/api/applications/:id/status", async (req, res) => {
   try {
+    // Validate input
+    const { id } = req.params;
+    const { status } = req.body;
+    console.log("Processing ID:", id, "Status:", status);
+
+    if (!id || !status) {
+      return res.status(400).json({ error: "ID and status are required" });
+    }
+
+    if (!["APPROVED", "REJECTED"].includes(status)) {
+      return res.status(400).json({ error: "Status must be APPROVED or REJECTED" });
+    }
+
+    // Update MongoDB
     const updatedApp = await Registration.findByIdAndUpdate(
-      req.params.id,
-      { status: req.body.status },
+      id,
+      { status },
       { new: true }
     );
 
     if (!updatedApp) {
+      console.error("Application not found for ID:", id);
       return res.status(404).json({ error: "Application not found" });
     }
 
-    // Determine the user's full name
-    const fullName = `${updatedApp.firstName} ${updatedApp.surname}`;
+    console.log("Updated Application:", updatedApp);
 
-    // Determine if the user is an Investor or Attendee based on their category
+    // Determine the user's full name
+    const fullName = `${updatedApp.firstName || ""} ${updatedApp.surname || ""}`.trim();
+    if (!fullName) {
+      console.error("Missing name fields for application:", updatedApp);
+      return res.status(400).json({ error: "Application missing required name fields" });
+    }
+
+    // Determine if the user is an Investor or Attendee
     const isInvestor = [
       "Development Finance Institution",
       "Private Equity",
@@ -201,44 +222,66 @@ app.put("/api/applications/:id/status", async (req, res) => {
       "Banks",
     ].includes(updatedApp.category);
 
-    // Determine the email template based on status and category
+    // Select email template
     let emailTemplate;
-    if (req.body.status === "APPROVED") {
+    if (status === "APPROVED") {
       emailTemplate = isInvestor
         ? emailTemplates.approvalInvestor(fullName)
         : emailTemplates.approvalAttendee(fullName);
-    } else if (req.body.status === "REJECTED") {
+    } else {
       emailTemplate = isInvestor
         ? emailTemplates.rejectionInvestor(fullName)
         : emailTemplates.rejectionAttendee(fullName);
-    } else {
-      return res.status(400).json({ error: "Invalid status" });
     }
 
-    // Prepare payload for the microservice
+    if (!emailTemplate || !emailTemplate.subject || !emailTemplate.html) {
+      console.error("Invalid email template:", emailTemplate);
+      return res.status(500).json({ error: "Failed to generate email template" });
+    }
+
+    // Prepare email payload
     const mailPayload = {
-      to: updatedApp.email, // Single email address
-      fromEmail: "adeoye.sobande@pbrinsight.com", // Consistent with sample
-      name: "Kareem", // Sender name as suggested
+      to: updatedApp.email,
+      fromEmail: "adeoye.sobande@pbrinsight.com",
+      name: "Kareem",
       subject: emailTemplate.subject,
-      body: emailTemplate.html, // Use HTML content
+      body: emailTemplate.html,
     };
 
-    // Send email via microservice
+    if (!updatedApp.email) {
+      console.error("Missing email for application:", updatedApp);
+      return res.status(400).json({ error: "Application missing email" });
+    }
+
+    console.log("Sending email with payload:", mailPayload);
+
+    // Send email
     try {
-      await axios.post("https://api.pbr.com.ng/mail/send", mailPayload, {
+      const response = await axios.post("https://api.pbr.com.ng/mail/send", mailPayload, {
         headers: { "Content-Type": "application/json" },
+        timeout: 10000, // 10s timeout
       });
+      console.log("Email sent successfully:", response.data);
     } catch (emailError) {
-      console.error("Email sending failed:", emailError);
-      // Optionally revert status or notify client
-      throw new Error("Failed to send confirmation email");
+      console.error("Email sending failed:", {
+        message: emailError.message,
+        response: emailError.response ? {
+          status: emailError.response.status,
+          data: emailError.response.data,
+        } : null,
+      });
+      // Revert MongoDB update to maintain consistency
+      await Registration.findByIdAndUpdate(id, { status: updatedApp.status }, { new: true });
+      return res.status(500).json({ error: "Failed to send confirmation email" });
     }
 
     res.json(updatedApp);
   } catch (error) {
-    console.error("Status update error:", error);
-    res.status(400).json({ error: "Status update failed" });
+    console.error("Status update error:", {
+      message: error.message,
+      stack: error.stack,
+    });
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
