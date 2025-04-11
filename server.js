@@ -177,6 +177,7 @@ app.get("/api/applications", async (req, res) => {
 });
 
 // Update application status
+// Update application status
 app.put("/api/applications/:id/status", async (req, res) => {
   try {
     const updatedApp = await Registration.findByIdAndUpdate(
@@ -216,18 +217,23 @@ app.put("/api/applications/:id/status", async (req, res) => {
 
     // Prepare payload for the microservice
     const mailPayload = {
-      to: updatedApp.email,
+      to: updatedApp.email, // Single email address
+      fromEmail: "adeoye.sobande@pbrinsight.com", // Consistent with sample
+      name: "Kareem", // Sender name as suggested
       subject: emailTemplate.subject,
-      body: emailTemplate.html || emailTemplate.body, // Use HTML if available, fallback to text
-      isHtml: !!emailTemplate.html // Boolean indicating if body is HTML
+      body: emailTemplate.html, // Use HTML content
     };
 
     // Send email via microservice
-    await axios.post("https://api.pbr.com.ng/mail/send", mailPayload, {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
+    try {
+      await axios.post("https://api.pbr.com.ng/mail/send", mailPayload, {
+        headers: { "Content-Type": "application/json" },
+      });
+    } catch (emailError) {
+      console.error("Email sending failed:", emailError);
+      // Optionally revert status or notify client
+      throw new Error("Failed to send confirmation email");
+    }
 
     res.json(updatedApp);
   } catch (error) {
