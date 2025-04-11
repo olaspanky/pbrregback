@@ -215,27 +215,13 @@ app.put("/api/applications/:id/status", async (req, res) => {
     }
 
     // Prepare payload for the microservice
-    // const mailPayload = {
-    //   to: updatedApp.email,
-    //   subject: emailTemplate.subject,
-    //   body: emailTemplate.html || emailTemplate.body, // Use HTML if available, fallback to text
-    //   isHtml: !!emailTemplate.html // Boolean indicating if body is HTML
-    // };
-
-    // // Send email via microservice
-    // await axios.post("https://api.pbr.com.ng/mail/send", mailPayload, {
-    //   headers: {
-    //     "Content-Type": "application/json",
-    //   },
-    // });
-
     const mailPayload = {
-      to: updatedApp.email, // Ensure this is a comma-separated string if multiple recipients
-      fromEmail: "adeoye@pbr", // or "noreply@pbr"
+      to: updatedApp.email,
       subject: emailTemplate.subject,
-      body: emailTemplate.html || emailTemplate.body, // Prefer HTML if available
+      body: emailTemplate.html || emailTemplate.body, // Use HTML if available, fallback to text
+      isHtml: !!emailTemplate.html // Boolean indicating if body is HTML
     };
-    
+
     // Send email via microservice
     await axios.post("https://api.pbr.com.ng/mail/send", mailPayload, {
       headers: {
