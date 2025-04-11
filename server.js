@@ -217,6 +217,8 @@ app.put("/api/applications/:id/status", async (req, res) => {
     // Prepare payload for the microservice
     const mailPayload = {
       to: updatedApp.email,
+      fromEmail: "adeoye@pbr",
+      name: "Adeoye",
       subject: emailTemplate.subject,
       body: emailTemplate.html || emailTemplate.body, // Use HTML if available, fallback to text
       isHtml: !!emailTemplate.html // Boolean indicating if body is HTML
