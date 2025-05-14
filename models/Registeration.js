@@ -11,6 +11,7 @@ const registrationSchema = new mongoose.Schema({
   mode: String,
   networking: [String],
   email: String,
+  phoneNumber: String, // Added phone number field
   status: { type: String, default: "PENDING" },
   createdAt: { type: Date, default: Date.now },
 });
